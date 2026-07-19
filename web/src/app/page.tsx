@@ -6,93 +6,111 @@ import { FavoriteProducts } from "@/components/containers/FavoriteProducts";
 import { Header } from "@/components/containers/Header";
 import { ProductList } from "@/components/containers/ProductList";
 import { ProductSearch } from "@/components/containers/ProductSearch";
-import { products } from "@/data/products";
 import type { CartItem } from "@/types/cart";
-import { filterProducts, getProductCategories } from "@/utils/productFilters";
+import type { Product } from "@/types/product";
+import { getProductCategories } from "@/utils/productFilters";
 
-const cartStorageKey = "kcl-shop-cart";
-const favoritesStorageKey = "kcl-shop-favorites";
-const categories = getProductCategories(products);
+const fetchErrorMessage =
+  "データを取得できませんでした。サーバーとデータベースの設定を確認してください。";
 
-function isCartItem(value: unknown): value is CartItem {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "productId" in value &&
-    typeof value.productId === "string" &&
-    "quantity" in value &&
-    typeof value.quantity === "number" &&
-    Number.isFinite(value.quantity)
-  );
-}
-
-function isFavoriteIds(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every((item) => typeof item === "string");
-}
-
-function readCartFromStorage(): CartItem[] {
-  const savedCart = window.localStorage.getItem(cartStorageKey);
-
-  if (!savedCart) {
-    return [];
-  }
-
-  try {
-    const parsedCart: unknown = JSON.parse(savedCart);
-    return Array.isArray(parsedCart) ? parsedCart.filter(isCartItem) : [];
-  } catch {
-    return [];
-  }
-}
-
-function readFavoriteIdsFromStorage(): string[] {
-  const savedFavorites = window.localStorage.getItem(favoritesStorageKey);
-
-  if (!savedFavorites) {
-    return [];
-  }
-
-  try {
-    const parsedFavorites: unknown = JSON.parse(savedFavorites);
-    return isFavoriteIds(parsedFavorites) ? parsedFavorites : [];
-  } catch {
-    return [];
-  }
-}
+type FavoriteResponse = {
+  productId: string;
+};
 
 export default function Home() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("すべて");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
-  const [hasLoadedStorage, setHasLoadedStorage] = useState(false);
 
-  // localStorage はブラウザだけで使えるため、ページ表示後に復元します。
+  // ページ表示時に、API から全商品を取得します。
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setCartItems(readCartFromStorage());
-    setFavoriteIds(readFavoriteIdsFromStorage());
-    setHasLoadedStorage(true);
+    async function loadProducts() {
+      try {
+        const response = await fetch("/api/products");
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch products: ${response.status}`);
+        }
+
+        const data: Product[] = await response.json();
+        setProducts(data);
+        setFilteredProducts(data);
+      } catch {
+        setErrorMessage(fetchErrorMessage);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadProducts();
   }, []);
 
-  // 最初の復元が終わるまで、空の配列で保存データを上書きしないようにします。
+  // ページ表示時に、保存済みのカートとお気に入りを API から復元します。
   useEffect(() => {
-    if (!hasLoadedStorage) {
-      return;
+    async function loadUserData() {
+      try {
+        const [cartResponse, favoritesResponse] = await Promise.all([
+          fetch("/api/cart"),
+          fetch("/api/favorites"),
+        ]);
+
+        if (!cartResponse.ok || !favoritesResponse.ok) {
+          throw new Error("Failed to fetch cart or favorites");
+        }
+
+        const cartData: CartItem[] = await cartResponse.json();
+        const favoriteData: FavoriteResponse[] = await favoritesResponse.json();
+
+        setCartItems(
+          cartData.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+          })),
+        );
+        setFavoriteIds(favoriteData.map((favorite) => favorite.productId));
+      } catch {
+        setErrorMessage(fetchErrorMessage);
+      }
     }
 
-    window.localStorage.setItem(cartStorageKey, JSON.stringify(cartItems));
-  }, [cartItems, hasLoadedStorage]);
+    loadUserData();
+  }, []);
 
-  useEffect(() => {
-    if (!hasLoadedStorage) {
-      return;
+  // 検索ボタンが押されたら、検索条件付きで API を呼び直します。
+  async function handleSearch() {
+    const searchParams = new URLSearchParams();
+    const trimmedSearchTerm = searchTerm.trim();
+
+    if (trimmedSearchTerm) {
+      searchParams.set("search", trimmedSearchTerm);
     }
 
-    window.localStorage.setItem(favoritesStorageKey, JSON.stringify(favoriteIds));
-  }, [favoriteIds, hasLoadedStorage]);
+    if (selectedCategory !== "すべて") {
+      searchParams.set("category", selectedCategory);
+    }
 
-  const filteredProducts = filterProducts(products, searchTerm, selectedCategory);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`/api/products?${searchParams.toString()}`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to search products: ${response.status}`);
+      }
+
+      setFilteredProducts(await response.json());
+      setErrorMessage("");
+    } catch {
+      setErrorMessage(fetchErrorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   const cartItemCount = cartItems.reduce(
     (totalQuantity, item) => totalQuantity + item.quantity,
@@ -103,35 +121,72 @@ export default function Home() {
     document.title = cartItemCount > 0 ? `KCL Shop (${cartItemCount})` : "KCL Shop";
   }, [cartItemCount]);
 
-  function handleAddToCart(productId: string) {
+  const categories = getProductCategories(products);
+
+  async function handleAddToCart(productId: string) {
+    const response = await fetch("/api/cart", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ productId }),
+    });
+
+    if (!response.ok) {
+      return;
+    }
+
+    const updatedItem: CartItem = await response.json();
+
     setCartItems((currentItems) => {
       const existingItem = currentItems.find((item) => item.productId === productId);
 
       if (existingItem) {
         return currentItems.map((item) =>
           item.productId === productId
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: updatedItem.quantity }
             : item,
         );
       }
 
-      return [...currentItems, { productId, quantity: 1 }];
+      return [
+        ...currentItems,
+        { productId: updatedItem.productId, quantity: updatedItem.quantity },
+      ];
     });
   }
 
-  function handleToggleFavorite(productId: string) {
-    setFavoriteIds((currentFavoriteIds) => {
-      const hasFavorite = currentFavoriteIds.includes(productId);
-
-      return hasFavorite
-        ? currentFavoriteIds.filter((id) => id !== productId)
-        : [...currentFavoriteIds, productId];
+  async function handleRemoveFromCart(productId: string) {
+    const response = await fetch(`/api/cart/${productId}`, {
+      method: "DELETE",
     });
-  }
 
-  function handleRemoveFromCart(productId: string) {
+    if (!response.ok) {
+      return;
+    }
+
     setCartItems((currentItems) =>
       currentItems.filter((item) => item.productId !== productId),
+    );
+  }
+
+  async function handleToggleFavorite(productId: string) {
+    const hasFavorite = favoriteIds.includes(productId);
+
+    const response = hasFavorite
+      ? await fetch(`/api/favorites/${productId}`, { method: "DELETE" })
+      : await fetch("/api/favorites", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productId }),
+        });
+
+    if (!response.ok) {
+      return;
+    }
+
+    setFavoriteIds((currentFavoriteIds) =>
+      hasFavorite
+        ? currentFavoriteIds.filter((id) => id !== productId)
+        : [...currentFavoriteIds, productId],
     );
   }
 
@@ -161,7 +216,9 @@ export default function Home() {
             </div>
             <div className="hero-stat-card">
               <span className="hero-stat-card__label">カテゴリ</span>
-              <strong className="hero-stat-card__value">{categories.length - 1}</strong>
+              <strong className="hero-stat-card__value">
+                {Math.max(categories.length - 1, 0)}
+              </strong>
             </div>
           </div>
         </section>
@@ -174,15 +231,26 @@ export default function Home() {
               searchTerm={searchTerm}
               selectedCategory={selectedCategory}
               onCategoryChange={setSelectedCategory}
+              onSearch={handleSearch}
               onSearchChange={setSearchTerm}
             />
-            <ProductList
-              cartItems={cartItems}
-              favoriteIds={favoriteIds}
-              products={filteredProducts}
-              onAddToCart={handleAddToCart}
-              onToggleFavorite={handleToggleFavorite}
-            />
+            {errorMessage ? (
+              <section className="panel">
+                <p className="empty-state">{errorMessage}</p>
+              </section>
+            ) : isLoading ? (
+              <section className="panel">
+                <p className="empty-state">商品を読み込んでいます...</p>
+              </section>
+            ) : (
+              <ProductList
+                cartItems={cartItems}
+                favoriteIds={favoriteIds}
+                products={filteredProducts}
+                onAddToCart={handleAddToCart}
+                onToggleFavorite={handleToggleFavorite}
+              />
+            )}
           </section>
 
           <aside className="content-grid__side">

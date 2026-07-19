@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 
@@ -8,6 +9,7 @@ type ProductSearchProps = {
   resultCount: number;
   onSearchChange: (value: string) => void;
   onCategoryChange: (value: string) => void;
+  onSearch: () => void;
 };
 
 export function ProductSearch({
@@ -17,6 +19,7 @@ export function ProductSearch({
   resultCount,
   onSearchChange,
   onCategoryChange,
+  onSearch,
 }: ProductSearchProps) {
   return (
     <section className="panel search-panel">
@@ -30,7 +33,13 @@ export function ProductSearch({
         <p className="section-caption">検索結果: {resultCount} 件</p>
       </div>
 
-      <div className="search-grid">
+      <form
+        className="search-grid"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSearch();
+        }}
+      >
         <Input
           id="product-search"
           label="キーワード"
@@ -49,7 +58,11 @@ export function ProductSearch({
           }))}
           value={selectedCategory}
         />
-      </div>
+
+        <div className="search-grid__action">
+          <Button type="submit">検索</Button>
+        </div>
+      </form>
     </section>
   );
 }

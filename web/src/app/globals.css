@@ -279,6 +279,12 @@ img {
   gap: 16px;
 }
 
+.search-grid__action {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+}
+
 .form-field {
   display: grid;
   gap: 8px;

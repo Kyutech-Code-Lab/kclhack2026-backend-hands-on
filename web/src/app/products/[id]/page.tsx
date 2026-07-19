@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { Header } from "@/components/containers/Header";
 import { Badge } from "@/components/ui/Badge";
-import { products } from "@/data/products";
+import { prisma } from "@/lib/prisma";
 import { formatPrice } from "@/utils/formatPrice";
 
 type ProductDetailPageProps = {
   params: Promise<{
-    id?: string;
+    id: string;
   }>;
 };
 
@@ -17,26 +17,10 @@ export default async function ProductDetailPage({
 }: ProductDetailPageProps) {
   const { id } = await params;
 
-  if (!id) {
-    return (
-      <div className="app-shell">
-        <Header />
-        <main className="simple-page">
-          <section className="page-panel">
-            <h1 className="section-title">商品を表示できませんでした</h1>
-            <p className="muted-text">
-              商品 ID が見つからないため、詳細ページを表示できません。
-            </p>
-            <Link className="text-link" href="/">
-              商品一覧に戻る
-            </Link>
-          </section>
-        </main>
-      </div>
-    );
-  }
-
-  const product = products.find((item) => item.id === id);
+  // Server Component なので、API を経由せずデータベースへ直接クエリできます。
+  const product = await prisma.product.findUnique({
+    where: { id },
+  });
 
   if (!product) {
     return (
