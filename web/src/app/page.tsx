@@ -8,22 +8,11 @@ import { ProductList } from "@/components/containers/ProductList";
 import { ProductSearch } from "@/components/containers/ProductSearch";
 import { products } from "@/data/products";
 import type { CartItem } from "@/types/cart";
-import type { Product } from "@/types/product";
 import { filterProducts, getProductCategories } from "@/utils/productFilters";
 
 const cartStorageKey = "kcl-shop-cart";
 const favoritesStorageKey = "kcl-shop-favorites";
 const categories = getProductCategories(products);
-const jsonExample = `{
-  "id": "p001",
-  "name": "ワイヤレスイヤホン",
-  "price": 3980
-}`;
-const xmlExample = `<product>
-  <id>p001</id>
-  <name>ワイヤレスイヤホン</name>
-  <price>3980</price>
-</product>`;
 
 function isCartItem(value: unknown): value is CartItem {
   return (
@@ -74,14 +63,12 @@ function readFavoriteIdsFromStorage(): string[] {
 export default function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("すべて");
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>(products);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [hasLoadedStorage, setHasLoadedStorage] = useState(false);
 
   // localStorage はブラウザだけで使えるため、ページ表示後に復元します。
   useEffect(() => {
-    // 教材では useEffect の使い方を見せるため、ここで state に入れ直します。
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setCartItems(readCartFromStorage());
     setFavoriteIds(readFavoriteIdsFromStorage());
@@ -105,11 +92,7 @@ export default function Home() {
     window.localStorage.setItem(favoritesStorageKey, JSON.stringify(favoriteIds));
   }, [favoriteIds, hasLoadedStorage]);
 
-  // 検索キーワードやカテゴリが変わった後に、表示する商品を更新します。
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setFilteredProducts(filterProducts(products, searchTerm, selectedCategory));
-  }, [searchTerm, selectedCategory]);
+  const filteredProducts = filterProducts(products, searchTerm, selectedCategory);
 
   const cartItemCount = cartItems.reduce(
     (totalQuantity, item) => totalQuantity + item.quantity,
@@ -162,8 +145,8 @@ export default function Home() {
             <p className="eyebrow">Hands-on Lecture</p>
             <h1 className="page-title">Next.js ではじめるシンプルなショッピングアプリ</h1>
             <p className="page-description">
-              検索、カテゴリ絞り込み、カート、お気に入り、注文フォームまでを
-              App Router でひと通り試せる入門サンプルです。
+              検索、カテゴリ絞り込み、カート、お気に入りまでを
+              ひと通り試せるサンプルアプリです。
             </p>
           </div>
 
