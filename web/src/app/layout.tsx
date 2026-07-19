@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "KCL Shop",
-  description: "Next.js App Router で学ぶシンプルなショッピングアプリ",
+  description: "ハンズオンで学ぶシンプルなショッピングアプリ",
 };
 
 export default function RootLayout({

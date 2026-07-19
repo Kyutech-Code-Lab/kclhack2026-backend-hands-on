@@ -15,7 +15,6 @@ type ProductDetailPageProps = {
 export default async function ProductDetailPage({
   params,
 }: ProductDetailPageProps) {
-  // App Router では、URL の [id] に入った値を params から受け取れます。
   const { id } = await params;
 
   if (!id) {
@@ -88,12 +87,6 @@ export default async function ProductDetailPage({
                 <dd>{product.rating.toFixed(1)}</dd>
               </div>
             </dl>
-            <div className="info-box">
-              <p className="info-box__title">講義メモ</p>
-              <p className="muted-text">
-                詳細ページでは動的ルーティングと `params` の受け取り方を確認できます。
-              </p>
-            </div>
             <div className="action-row">
               <Link className="text-link" href="/">
                 商品一覧に戻る

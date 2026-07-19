@@ -38,7 +38,6 @@ export function ProductList({
       </div>
 
       <div className="products-grid">
-        {/* map を使うと、配列の中身を 1 件ずつ ProductCard に変換できます。 */}
         {products.map((product) => {
           const cartItem = cartItems.find((item) => item.productId === product.id);
 

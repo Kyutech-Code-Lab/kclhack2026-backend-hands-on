@@ -17,7 +17,7 @@ export function Header({ cartItemCount, favoriteCount }: HeaderProps) {
             KCL Shop
           </Link>
           <p className="site-header__subtitle">
-            App Router と React Hooks を学ぶためのミニアプリ
+            ハンズオンで学ぶミニショッピングアプリ
           </p>
         </div>
 
@@ -27,11 +27,11 @@ export function Header({ cartItemCount, favoriteCount }: HeaderProps) {
               <span className="status-pill">カート {cartItemCount ?? 0}</span>
               <span className="status-pill">お気に入り {favoriteCount ?? 0}</span>
             </div>
-          ) : 
+          ) : (
             <Link className="text-link" href="/">
               商品一覧に戻る
             </Link>
-          }
+          )}
         </nav>
       </div>
     </header>

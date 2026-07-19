@@ -9,9 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "verify:app-logic": "node --experimental-strip-types --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/verify-app-logic.mjs",
-    "verify:materials": "node scripts/verify-materials.mjs",
-    "verify:browser": "node scripts/verify-browser.mjs",
-    "check": "npm run lint && npm run typecheck && npm run verify:app-logic && npm run verify:materials && npm run build"
+    "check": "npm run lint && npm run typecheck && npm run verify:app-logic && npm run build"
   },
   "dependencies": {
     "next": "16.2.6",

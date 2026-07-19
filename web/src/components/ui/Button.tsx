@@ -19,7 +19,6 @@ export function Button({
   ariaPressed,
   onClick,
 }: ButtonProps) {
-  // children には <Button>ここに書いた文字</Button> の中身が入ります。
   const classes = `button button--${variant}${className ? ` ${className}` : ""}`;
 
   return (
