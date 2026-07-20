@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AuthStatus } from "@/components/containers/AuthStatus";
 
 type HeaderProps = {
   cartItemCount?: number;
@@ -32,6 +33,7 @@ export function Header({ cartItemCount, favoriteCount }: HeaderProps) {
               商品一覧に戻る
             </Link>
           )}
+          <AuthStatus />
         </nav>
       </div>
     </header>

@@ -114,6 +114,12 @@ img {
   flex-wrap: wrap;
 }
 
+.auth-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .site-header__status {
   display: flex;
   gap: 8px;

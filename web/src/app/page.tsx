@@ -1,11 +1,14 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CartSummary } from "@/components/containers/CartSummary";
 import { FavoriteProducts } from "@/components/containers/FavoriteProducts";
 import { Header } from "@/components/containers/Header";
 import { ProductList } from "@/components/containers/ProductList";
 import { ProductSearch } from "@/components/containers/ProductSearch";
+import { createClient } from "@/lib/supabase/client";
 import type { CartItem } from "@/types/cart";
 import type { Product } from "@/types/product";
 import { getProductCategories } from "@/utils/productFilters";
@@ -18,6 +21,7 @@ type FavoriteResponse = {
 };
 
 export default function Home() {
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,6 +30,7 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("すべて");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // ページ表示時に、API から全商品を取得します。
   useEffect(() => {
@@ -50,7 +55,8 @@ export default function Home() {
     loadProducts();
   }, []);
 
-  // ページ表示時に、保存済みのカートとお気に入りを API から復元します。
+  // ログイン状態の変化(セッションの読み込み完了)に合わせて、
+  // 保存済みのカートとお気に入りを API から復元します。
   useEffect(() => {
     async function loadUserData() {
       try {
@@ -58,6 +64,12 @@ export default function Home() {
           fetch("/api/cart"),
           fetch("/api/favorites"),
         ]);
+
+        // 401 はログインしていないだけなので、エラーにはしません。
+        if (cartResponse.status === 401 || favoritesResponse.status === 401) {
+          setIsLoggedIn(false);
+          return;
+        }
 
         if (!cartResponse.ok || !favoritesResponse.ok) {
           throw new Error("Failed to fetch cart or favorites");
@@ -78,7 +90,28 @@ export default function Home() {
       }
     }
 
-    loadUserData();
+    const supabase = createClient();
+
+    // セッションが最初に読み込まれたとき(INITIAL_SESSION)や、
+    // ログイン(SIGNED_IN)・ログアウト(SIGNED_OUT)の通知を受け取ります。
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
+        if (session) {
+          setIsLoggedIn(true);
+          loadUserData();
+        } else {
+          setIsLoggedIn(false);
+        }
+      }
+
+      if (event === "SIGNED_OUT") {
+        setIsLoggedIn(false);
+        setCartItems([]);
+        setFavoriteIds([]);
+      }
+    });
+
+    return () => data.subscription.unsubscribe();
   }, []);
 
   // 検索ボタンが押されたら、検索条件付きで API を呼び直します。
@@ -130,6 +163,11 @@ export default function Home() {
       body: JSON.stringify({ productId }),
     });
 
+    if (response.status === 401) {
+      router.push("/login");
+      return;
+    }
+
     if (!response.ok) {
       return;
     }
@@ -159,6 +197,11 @@ export default function Home() {
       method: "DELETE",
     });
 
+    if (response.status === 401) {
+      router.push("/login");
+      return;
+    }
+
     if (!response.ok) {
       return;
     }
@@ -178,6 +221,11 @@ export default function Home() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ productId }),
         });
+
+    if (response.status === 401) {
+      router.push("/login");
+      return;
+    }
 
     if (!response.ok) {
       return;
@@ -254,12 +302,28 @@ export default function Home() {
           </section>
 
           <aside className="content-grid__side">
-            <CartSummary
-              cartItems={cartItems}
-              products={products}
-              onRemoveFromCart={handleRemoveFromCart}
-            />
-            <FavoriteProducts favoriteIds={favoriteIds} products={products} />
+            {isLoggedIn ? (
+              <>
+                <CartSummary
+                  cartItems={cartItems}
+                  products={products}
+                  onRemoveFromCart={handleRemoveFromCart}
+                />
+                <FavoriteProducts favoriteIds={favoriteIds} products={products} />
+              </>
+            ) : (
+              <section className="summary-card">
+                <div className="section-header">
+                  <h2 className="section-title">カートとお気に入り</h2>
+                </div>
+                <p className="empty-state">
+                  ログインすると、カートとお気に入りを使えます。
+                </p>
+                <Link className="text-link" href="/login">
+                  ログインする
+                </Link>
+              </section>
+            )}
           </aside>
         </div>
       </main>

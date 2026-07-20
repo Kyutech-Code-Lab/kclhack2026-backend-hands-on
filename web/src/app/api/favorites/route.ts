@@ -1,18 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-// 講座2で、ログインしているユーザーの ID に置き換えます。
-const userId = "demo-user";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+
+  if (!claims) {
+    return NextResponse.json(
+      { error: "ログインが必要です。" },
+      { status: 401 },
+    );
+  }
+
   const favorites = await prisma.favorite.findMany({
-    where: { userId },
+    where: { userId: claims.sub },
   });
 
   return NextResponse.json(favorites);
 }
 
 export async function POST(request: NextRequest) {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+
+  if (!claims) {
+    return NextResponse.json(
+      { error: "ログインが必要です。" },
+      { status: 401 },
+    );
+  }
+
   let body: unknown;
 
   try {
@@ -39,7 +59,7 @@ export async function POST(request: NextRequest) {
   // すでに登録済みならそのまま返します(200)。
   const existingFavorite = await prisma.favorite.findUnique({
     where: {
-      userId_productId: { userId, productId: body.productId },
+      userId_productId: { userId: claims.sub, productId: body.productId },
     },
   });
 
@@ -51,10 +71,10 @@ export async function POST(request: NextRequest) {
   // 同時に 2 つのリクエストが来ても一意制約エラーになりません。
   const createdFavorite = await prisma.favorite.upsert({
     where: {
-      userId_productId: { userId, productId: body.productId },
+      userId_productId: { userId: claims.sub, productId: body.productId },
     },
     update: {},
-    create: { userId, productId: body.productId },
+    create: { userId: claims.sub, productId: body.productId },
   });
 
   return NextResponse.json(createdFavorite, { status: 201 });
