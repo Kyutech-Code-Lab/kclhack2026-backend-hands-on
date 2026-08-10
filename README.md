@@ -10,11 +10,6 @@ cd kclhack2026-backend-hands-on
 npm ci
 ```
 
-### Prismaクライアントの作成
-```bash
-npx prisma generate
-```
-
 ### Supabaseプロジェクトの作成
 
 - Supabaseダッシュボードにて New Project を選択
@@ -38,6 +33,11 @@ cp .env.example .env
 
 `[YOUR-PASSWORD]`はプロジェクト作成時に設定したパスワードにする。
 
+### Prismaクライアントの作成
+
+```bash
+npx prisma generate
+```
 
 ### テーブルの作成と初期データの投入
 
