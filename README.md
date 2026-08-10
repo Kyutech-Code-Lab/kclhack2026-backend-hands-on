@@ -6,7 +6,7 @@
 
 ```bash
 git clone -b develop git@github.com:Kyutech-Code-Lab/kclhack2026-backend-hands-on.git
-cd kclhack2026-backend-hands-on/web
+cd kclhack2026-backend-hands-on
 npm ci
 ```
 
@@ -25,7 +25,6 @@ npx prisma generate
 
 ### 環境変数の設定
 
-`web/`で
 ```bash
 cp .env.example .env
 ```
@@ -42,7 +41,6 @@ cp .env.example .env
 
 ### テーブルの作成と初期データの投入
 
-`web/`で
 ```bash
 npx prisma db push
 npx prisma db seed
@@ -53,7 +51,6 @@ Authentication → URL Configuration → Site URL が `http://localhost:3000`を
 
 ### 起動
 
-`web/`で
 ```bash
 npm run dev
 ```
