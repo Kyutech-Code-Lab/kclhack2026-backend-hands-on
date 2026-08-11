@@ -8,14 +8,10 @@ datasource db {
 }
 
 model Product {
-  id          String @id
-  name        String
-  description String
-  price       Int
-  category    String
-  imageUrl    String
-  stock       Int
-  rating      Float
+  id   String @id
+  name String
+  // TODO(DB): 残りのフィールドを定義しましょう
+  // ここにフィールドの定義を追加します
 }
 
 model CartItem {
