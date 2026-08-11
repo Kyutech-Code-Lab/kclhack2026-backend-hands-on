@@ -36,15 +36,8 @@ export default function Home() {
   useEffect(() => {
     async function loadProducts() {
       try {
-        const response = await fetch("/api/products");
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch products: ${response.status}`);
-        }
-
-        const data: Product[] = await response.json();
-        setProducts(data);
-        setFilteredProducts(data);
+        // TODO(API): "/api/products" を fetch し、取得した商品を
+        // setProducts と setFilteredProducts にセットしましょう
       } catch {
         setErrorMessage(fetchErrorMessage);
       } finally {
