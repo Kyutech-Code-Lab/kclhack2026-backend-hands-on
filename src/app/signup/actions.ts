@@ -6,16 +6,15 @@ import { createClient } from "@/lib/supabase/server";
 export async function signup(formData: FormData) {
   const supabase = await createClient();
 
-  const email = String(formData.get("email"));
-  const password = String(formData.get("password"));
+  // TODO(Auth): formData から email と password を取得しましょう
+  const email = "";
+  const password = "";
 
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-  });
+  // TODO(Auth): signUp でアカウントを作成し、結果の error を取得しましょう
+  const error = null;
 
   if (error) {
-    redirect("/signup?error=failed");
+    // TODO(Auth): /signup?error=failed にリダイレクトしましょう
   }
 
   redirect("/signup?message=sent");

@@ -7,16 +7,15 @@ import { createClient } from "@/lib/supabase/server";
 export async function login(formData: FormData) {
   const supabase = await createClient();
 
-  const email = String(formData.get("email"));
-  const password = String(formData.get("password"));
+  // TODO(Auth): formData から email と password を取得しましょう
+  const email = "";
+  const password = "";
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  // TODO(Auth): signInWithPassword でログインし、結果の error を取得しましょう
+  const error = null;
 
   if (error) {
-    redirect("/login?error=invalid");
+    // TODO(Auth): /login?error=invalid にリダイレクトしましょう
   }
 
   revalidatePath("/", "layout");
