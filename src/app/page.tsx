@@ -156,7 +156,10 @@ export default function Home() {
       body: JSON.stringify({ productId }),
     });
 
-    // TODO(Auth): 401 が返ってきたら /login にリダイレクトしましょう
+    if (response.status === 401) {
+      router.push("/login");
+      return;
+    }
 
     if (!response.ok) {
       return;

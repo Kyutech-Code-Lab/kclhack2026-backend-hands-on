@@ -8,7 +8,7 @@ npm run dev
 
 http://localhost:3000 を開き、「カートに追加」を押したのちに、ページをリロードするとカート情報が消えることを確認しましょう。
 
-## 2. ### Authenticationの確認
+## 2. Authenticationの確認
 Supabaseのプロジェクトを開き
 Authentication → URL Configuration → Site URL が `http://localhost:3000`を指していることを確認する
 
@@ -71,17 +71,6 @@ if (!claims) {
 ```
 
 `userId` を使っている箇所は `claims.sub` に置き換えます。
-
-### `src/app/page.tsx` の `handleAddToCart` 関数
-
-カート追加のリクエストが 401 を返したら、`/login` にリダイレクトします。
-
-```ts
-if (response.status === 401) {
-  router.push("/login");
-  return;
-}
-```
 
 ## 3. 動作確認
 
