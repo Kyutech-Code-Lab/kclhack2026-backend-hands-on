@@ -6,19 +6,19 @@
 npm run dev
 ```
 
-http://localhost:3000 を開き、「カートに追加」を押したのちに、ページをリロードするとカート情報が消えることを確認しましょう。
+http://localhost:3000 を開き、「カートに追加」を押したのちに、ページをリロードすると右上のカートに入っている商品数が0になることを確認しましょう。
 
 ## 2. Authenticationの確認
-Supabaseのプロジェクトを開き
-Authentication → URL Configuration → Site URL が `http://localhost:3000`を指していることを確認する
+Supabaseのプロジェクトを開き、Authentication → URL Configuration → Site URL が `http://localhost:3000` になっていることを確認しましょう。
 
-## 2. 実装
+## 3. 実装
 
-次の箇所を実装しましょう
+次の箇所を実装しましょう。
 
 ### `src/app/signup/actions.ts`
 
 `signUp` でアカウントを作成できるようにしましょう。
+10-18行目を次のように書き換えます。
 
 ```ts
 const email = String(formData.get("email"));
@@ -34,10 +34,10 @@ if (error) {
 }
 ```
 
-
 ### `src/app/login/actions.ts`
 
-ログインできるようにしましょう
+ログインできるようにしましょう。
+11-19行目を次のように書き換えます。
 
 ```ts
 const email = String(formData.get("email"));
@@ -53,9 +53,10 @@ if (error) {
 }
 ```
 
-### `src/app/api/cart/route.ts`(GET・POST)
+### `src/app/api/cart/route.ts` (GET)
 
-`getClaims()` でログイン中のユーザーを確認し、ログインしていなければ 401 を返します。取得した `claims.sub` がユーザーIDです。GET・POST の両方に実装しましょう。
+`getClaims()` でログイン中のユーザーを確認し、ログインしていなければ 401 を返します。取得した `claims.sub` がユーザーIDです。
+`GET` 関数内の最初にある (8行目付近) `userId` の宣言を削除して、次のように実装します。
 
 ```ts
 const supabase = await createClient();
@@ -70,23 +71,43 @@ if (!claims) {
 }
 ```
 
-`userId` を使っている箇所は `claims.sub` に置き換えます。
+関数内で先ほど削除した `userId` を使っている箇所は `claims.sub` に置き換えます。
 
-## 3. 動作確認
+### `src/app/api/cart/route.ts` (POST)
 
-```bash
-npm run dev
+`getClaims()` でログイン中のユーザーを確認し、ログインしていなければ 401 を返します。取得した `claims.sub` がユーザーIDです。
+`POST` 関数内の最初にある `userId` の宣言を削除して、次のように実装します。
+
+```ts
+const supabase = await createClient();
+const { data } = await supabase.auth.getClaims();
+const claims = data?.claims;
+
+if (!claims) {
+  return NextResponse.json(
+    { error: "ログインが必要です。" },
+    { status: 401 },
+  );
+}
 ```
 
-1. ヘッダーの「ログイン」→「アカウントを作成する」からサインアップします
-2. Supabase に登録したものと同じメールアドレスを使いましょう
-3. 届いた確認メールのリンクを開き、登録を完了します
-4. ログインし、商品を「カートに追加」できることを確認します
-5. リロードしてもカートの内容が残っていることを確認します
+関数内で先ほど削除した `userId` を使っている箇所は、`claims.sub` に置き換えます。
 
-## 発展
+## 4. 動作確認
 
-時間に余裕がある人は、次にも挑戦してみましょう。
+1. http://localhost:3000 を開きます。
+2. ヘッダーの「ログイン」→「アカウントを作成する」を選択します。
+3. メールアドレス(メールを確認できるもの)とパスワードを入力して、「アカウントを作成」をクリックします。
+4. 届いた確認メールのリンクを開き、登録を完了します(届いたメールに `Confirm email address` と書かれているはずです)。
+5. `http://localhost:3000` を開き、先ほどアカウント作成時に使用した情報を使ってログインします。
+6. 商品を「カートに追加」できることを確認します。
+7. リロードしてもカートの内容が残っていることを確認します。
 
-- `src/app/api/cart/[productId]/route.ts`(DELETE)・`src/app/api/favorites/route.ts`・`src/app/api/favorites/[productId]/route.ts` に、同じ認証チェックを実装する
-- `src/app/page.tsx` の `handleRemoveFromCart`・`handleToggleFavorite` にも 401 のリダイレクトを実装する
+### 確認メールが届かない場合
+
+今回の設定だと、Supabaseは1時間に2通までしかメールを送信できません。そのためメール送信の上限に引っかかっている可能性があります。
+手動でアカウントを作成する場合は次の手順に従ってください
+1. Supabaseのプロジェクトを開く。
+2. 「Authentication → Users → Add user → Create new user」を選択する。
+3. 「Auto confirm user?」にチェックが入っていることを確認して、「Create user」を選択する。
+これでアカウントを作成することができます。
